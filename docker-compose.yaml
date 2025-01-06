@@ -1,0 +1,89 @@
+version: '3.8'
+
+x-common: &common
+  stdin_open: true
+  tty: true
+  restart: unless-stopped
+
+services:
+  django:
+    <<: *common
+    build:
+      context: .
+      args:
+        REQUIREMENT_FILE: $REQUIREMENT_FILE
+    container_name: django
+    command: >
+      bash -c "
+        python3 manage.py makemigrations &&
+        python3 manage.py migrate &&
+        python3 manage.py runserver 0.0.0.0:8000
+      "
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/code
+      - project_static_volume:/code/staticfiles
+      - project_media_volume:/media
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    <<: *common
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - project_redis_data:/data
+
+  postgres:
+    <<: *common
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: confiaTech
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  celery:
+    <<: *common
+    build: .
+    container_name: celery
+    command: bash -c "celery -A config worker --loglevel=info"
+    volumes:
+      - ./:/code
+      - project_media_volume:/media
+    depends_on:
+      - redis
+      - postgres
+      - django
+
+  celery_beat:
+    <<: *common
+    build:
+      context: .
+      args:
+        REQUIREMENT_FILE: $REQUIREMENT_FILE
+    command: bash -c "celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    depends_on:
+      - django
+      - redis
+    volumes:
+      - ./:/code
+      - project_media_volume:/media
+
+volumes:
+  postgres_data:
+  project_redis_data:
+  project_static_volume:
+  project_media_volume:
