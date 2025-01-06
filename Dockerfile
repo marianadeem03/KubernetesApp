@@ -27,4 +27,4 @@ ENV CELERY_BROKER_URL=redis://redis:6379/0
 ENV CELERY_RESULT_BACKEND=redis://redis:6379/0
 
 # Default command for Django (adjust if you have a different entry point)
-CMD ["python", "manage.py", "runserver", "192.168.49.2:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
