@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: celery-beat
-          image: marianadeem03/django-image:v1.0
+          image: marianadeem03/django-image:v1.0.1
+          imagePullPolicy: Always
           command: ["celery", "-A", "config", "beat", "--loglevel=info"]
           env:
             - name: CELERY_BROKER_URL

@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: celery
-          image: marianadeem03/django-image:v1.0
+          image: marianadeem03/django-image:v1.0.1
+          imagePullPolicy: Always
           workingDir: /code
           command: ["celery", "-A", "config.celery", "worker", "--loglevel=info"]
           env:
